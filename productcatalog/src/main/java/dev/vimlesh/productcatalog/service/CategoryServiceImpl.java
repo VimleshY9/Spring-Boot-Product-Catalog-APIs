@@ -1,0 +1,96 @@
+package dev.vimlesh.productcatalog.service;
+
+
+import dev.vimlesh.productcatalog.dto.CategoryDto;
+import dev.vimlesh.productcatalog.model.Category;
+import dev.vimlesh.productcatalog.model.Product;
+import dev.vimlesh.productcatalog.repositories.CategoryRepository;
+import dev.vimlesh.productcatalog.repositories.ProductRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Service
+public class CategoryServiceImpl implements CategoryService {
+    private CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
+
+    public CategoryServiceImpl(CategoryRepository categoryRepository,
+                               ProductRepository productRepository) {
+        this.categoryRepository = categoryRepository;
+        this.productRepository = productRepository;
+    }
+
+    @Override
+    public Category getCategory(String uuid) {
+        Optional<Category> categoryOptional = categoryRepository.findById(UUID.fromString(uuid));
+
+        if (categoryOptional.isEmpty()) {
+            return null;
+        }
+
+        Category category = categoryOptional.get();
+
+        List<Product> products = category.getProducts();
+
+
+        return category;
+    }
+
+    public List<String> getProductTitles(List<String> categoryUUIDs) {
+        List<UUID> uuids = new ArrayList<>();
+
+        for (String uuid: categoryUUIDs) {
+            uuids.add(UUID.fromString(uuid));
+        }
+//
+//        List<Category> categories = categoryRepository.findAllById(uuids);
+//
+//
+//        List<String> titles = new ArrayList<>();
+//
+//        categories.forEach(
+//                category -> {
+//                    category.getProducts().forEach(
+//                            product -> {
+//                                titles.add(product.getTitle());
+//                            }
+//                    );
+//                }
+//        );
+//
+//
+//        return titles;
+
+        List<Category> categories = categoryRepository.findAllById(uuids);
+
+        List<Product> products = productRepository.findAllByCategoryIn(categories);
+
+        List<String> titles = new ArrayList<>();
+
+        for (Product p: products) {
+            titles.add(p.getTitle());
+        }
+
+        return titles;
+    }
+
+    @Override
+    public List<CategoryDto> getAllCategories() {
+        List<Category> categories = categoryRepository.findAll();
+        List<CategoryDto>  categoryDtoList = new ArrayList<>();
+        for(Category category: categories){
+            categoryDtoList.add(convertInCategoryDto(category));
+        }
+        return categoryDtoList;
+    }
+
+    private CategoryDto convertInCategoryDto(Category category){
+        CategoryDto categoryDto = new CategoryDto();
+        categoryDto.setName(category.getName());
+        return categoryDto;
+    }
+}
